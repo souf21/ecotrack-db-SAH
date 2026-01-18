@@ -1,15 +1,30 @@
-const supabase = require('../config/supabase'); // 1 niveau seulement
+const supabase = require('../config/supabase');
 
 module.exports = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token manquant' });
-
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error) throw error;
-    req.user = user;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token manquant' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    // Vérification du token via Supabase
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
+      return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    // Injection du user dans la requête
+    req.user = {
+      id: data.user.id,
+      email: data.user.email
+    };
+
     next();
   } catch (err) {
-    res.status(401).json({ error: 'Token invalide' });
+    console.error('Auth middleware error:', err);
+    res.status(401).json({ error: 'Authentification échouée' });
   }
 };

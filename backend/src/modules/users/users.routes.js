@@ -33,7 +33,7 @@ router.get('/me', authMiddleware, (req, res) => {
 
 
 module.exports = router;
-*/
+///////////////////////////////////////////////////
 // backend/src/users/users.routes.js
 const express = require('express');
 const router = express.Router();
@@ -54,3 +54,42 @@ router.post('/login', authController.login);
 router.post('/refresh', authController.refresh);
 
 module.exports = router;
+*/
+// backend/src/modules/users/users.routes.js
+const express = require('express');
+const router = express.Router();
+
+const authController = require('./auth.controller');
+const authMiddleware = require('../../middlewares/auth.middleware');
+const rolesMiddleware = require('../../middlewares/roles.middleware');
+console.log('authController =', authController);
+
+
+// Auth
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/refresh', authController.refresh);
+
+// Routes protégées
+router.get('/me', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Tu es connecté',
+    user: req.user
+  });
+});
+
+router.get(
+  '/admin-only',
+  authMiddleware,
+  rolesMiddleware('admin'),
+  (req, res) => {
+    res.json({
+      message: 'Accès admin autorisé',
+      email: req.user.email,
+      date: new Date().toISOString()
+    });
+  }
+);
+
+module.exports = router;
+

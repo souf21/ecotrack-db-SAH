@@ -1,5 +1,5 @@
 Structure du dossier pour le volume Data
-Le num‚ro de s‚rie du volume est 3809-B92D
+Le numï¿½ro de sï¿½rie du volume est 3809-B92D
 D:.
 |   structure.txt
 |   
@@ -1924,3 +1924,7 @@ D:.
     \---snippets
             .gitkeep
             
+
+
+
+/*eyJhbGciOiJFUzI1NiIsImtpZCI6ImI4MTI2OWYxLTIxZDgtNGYyZS1iNzE5LWMyMjQwYTg0MGQ5MCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiI5Y2ZlNjg5NC04NDc0LTRjNTEtODEyZS0zZTA3ZTM1NDE4MWEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY4NjYyNjQ5LCJpYXQiOjE3Njg2NTkwNDksImVtYWlsIjoiaGFtemEubm91dmVhdS4yMDI2QHRlc3QuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6ImhhbXphLm5vdXZlYXUuMjAyNkB0ZXN0LmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjljZmU2ODk0LTg0NzQtNGM1MS04MTJlLTNlMDdlMzU0MTgxYSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzY4NjU5MDQ5fV0sInNlc3Npb25faWQiOiI0MjVlZGZlMy00MjlhLTRmZjktOTFkOC01YjQ1ZjZlYTE1MjgiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.9f8cgRNMMxWm_i0D70xLsuv5G02aK-gVuScT-dGNkOjdKpZYi6BDTPD0Zr5ripKJC6SDqa1ZQi5Xh6kc88Ch6g*/
