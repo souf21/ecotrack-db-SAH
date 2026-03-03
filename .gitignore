@@ -10,3 +10,4 @@ yarn.lock
 # OS
 .DS_Store
 Thumbs.db
+".env" 
