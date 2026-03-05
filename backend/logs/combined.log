@@ -1,0 +1,9 @@
+{"level":"info","message":"::1 - - [04/Mar/2026:15:00:57 +0000] \"GET /api/bins HTTP/1.1\" 200 36 \"-\" \"PostmanRuntime/7.51.0\"","timestamp":"2026-03-04T15:00:57.058Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"GET /api/bins HTTP/1.1\" 200 36 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.523Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"GET /api/bins HTTP/1.1\" 200 36 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.549Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"POST /api/bins HTTP/1.1\" 401 26 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.594Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"POST /api/bins HTTP/1.1\" 401 26 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.735Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"DELETE /api/bins/123e4567-e89b-12d3-a456-426614174000 HTTP/1.1\" 401 26 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.747Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"GET /health HTTP/1.1\" 200 73 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.757Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:15:47:26 +0000] \"GET /ping HTTP/1.1\" 200 53 \"-\" \"-\"","timestamp":"2026-03-04T15:47:26.765Z"}
+{"level":"info","message":"::ffff:127.0.0.1 - - [04/Mar/2026:16:15:56 +0000] \"GET /monitoring HTTP/1.1\" 200 306 \"-\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\"","timestamp":"2026-03-04T16:15:56.285Z"}

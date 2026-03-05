@@ -1,0 +1,39 @@
+# docker-compose.yml
+# Lance l'API + Redis ensemble en un seul comando
+
+version: '3.8'
+
+services:
+  # Notre API EcoTrack
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    restart: always
+
+  # Redis pour le cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: always
+```
+
+---
+
+Crée le fichier `.dockerignore` à la racine de `backend/` :
+```
+node_modules
+.env
+logs
+coverage
+*.test.js

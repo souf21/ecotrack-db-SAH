@@ -1,21 +1,12 @@
-// Importer express
-const express = require('express');
+// Point d'entrée de l'application
+// Ce fichier charge les variables d'environnement et démarre le serveur
 
-// Créer l'application
-const app = express();
+require('dotenv').config(); // DOIT être en premier pour charger le .env
+const app = require('./app'); // On importe l'app Express configurée
 
-// Pour pouvoir lire le JSON dans les requêtes
-app.use(express.json());
-
-// Exemple de route test
-app.get('/', (req, res) => {
-  res.send('🚀 Backend EcoTrack fonctionne !');
-});
-
-// Définir le port
 const PORT = process.env.PORT || 5000;
 
-// Démarrer le serveur
 app.listen(PORT, () => {
-  console.log(`🚀 Backend EcoTrack démarré sur le port ${PORT}`);
+  console.log(`🚀 EcoTrack API démarrée sur le port ${PORT}`);
+  console.log(`🌍 Environnement : ${process.env.NODE_ENV}`);
 });

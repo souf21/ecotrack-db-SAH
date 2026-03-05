@@ -1,0 +1,64 @@
+# .github/workflows/ci.yml
+# Pipeline CI/CD — lancé automatiquement à chaque push sur GitHub
+
+name: EcoTrack CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Tests automatisés
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupère le code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Installe Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      # 3. Installe les dépendances
+      - name: Install dependencies
+        working-directory: backend
+        run: npm install
+
+      # 4. Lance les tests
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+        env:
+          NODE_ENV: test
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      # 5. Vérifie la couverture > 70%
+      - name: Check coverage
+        working-directory: backend
+        run: npm test -- --coverage --coverageThreshold='{"global":{"lines":70}}'
+        env:
+          NODE_ENV: test
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+  build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: test  # Lance seulement si les tests passent
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        working-directory: backend
+        run: docker build -t ecotrack-api .
