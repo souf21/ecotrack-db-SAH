@@ -10,15 +10,16 @@
     "test:watch": "jest --watch"
   },
   "jest": {
-    "testEnvironment": "node",
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/config/**",
-      "!src/server.js",
-      "!src/index.js"
-    ]
-  },
+  "testEnvironment": "node",
+  "setupFiles": ["./jest.setup.js"],
+  "coverageDirectory": "coverage",
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/config/**",
+    "!src/server.js",
+    "!src/index.js"
+  ]
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
