@@ -1,7 +1,7 @@
-// jest.config.js
 module.exports = {
   testEnvironment: 'node',
-  setupFiles: ['./jest.setup.js'], // charge les variables avant les tests
+  setupFiles: ['./jest.setup.js'],
+  testTimeout: 15000, // 15 secondes au lieu de 5
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js',

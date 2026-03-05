@@ -12,6 +12,18 @@ jobs:
     name: Tests automatisés
     runs-on: ubuntu-latest
 
+    # Lance Redis comme service pendant les tests
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -34,6 +46,8 @@ jobs:
           NODE_ENV: test
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
 
   build:
     name: Build Docker
