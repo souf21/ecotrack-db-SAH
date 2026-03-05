@@ -1,6 +1,34 @@
 // src/modules/bins/__tests__/bins.routes.test.js
-// Tests d'intégration — teste les routes HTTP avec Supertest
-// Pas besoin de lancer le serveur, Supertest le fait automatiquement
+
+// Mock Supabase AVANT tout import
+jest.mock('../../../config/supabase', () => ({
+  from: jest.fn(() => ({
+    select: jest.fn(() => ({
+      eq: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        })),
+        single: jest.fn().mockResolvedValue({ data: null, error: null }),
+        mockResolvedValue: jest.fn().mockResolvedValue({ data: [], error: null })
+      })),
+      limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+      mockResolvedValue: jest.fn().mockResolvedValue({ data: [], error: null })
+    }))
+  })),
+  auth: {
+    getUser: jest.fn().mockResolvedValue({ data: null, error: { message: 'invalid' } })
+  }
+}));
+
+// Mock Redis
+jest.mock('../../../config/redis', () => ({
+  get: jest.fn().mockResolvedValue(null),
+  setex: jest.fn().mockResolvedValue('OK'),
+  ping: jest.fn().mockResolvedValue('PONG'),
+  keys: jest.fn().mockResolvedValue([]),
+  del: jest.fn().mockResolvedValue(1),
+  on: jest.fn()
+}));
 
 const request = require('supertest');
 const app = require('../../../app');
@@ -11,18 +39,14 @@ const app = require('../../../app');
 describe('GET /api/bins', () => {
 
   test('retourne HTTP 200 et un tableau', async () => {
-    const response = await request(app)
-      .get('/api/bins');
-
+    const response = await request(app).get('/api/bins');
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
   });
 
   test('retourne le bon format de réponse', async () => {
-    const response = await request(app)
-      .get('/api/bins');
-
+    const response = await request(app).get('/api/bins');
     expect(response.body).toHaveProperty('success');
     expect(response.body).toHaveProperty('count');
     expect(response.body).toHaveProperty('data');
@@ -46,24 +70,21 @@ describe('POST /api/bins', () => {
         id_zone: '123e4567-e89b-12d3-a456-426614174001',
         id_type_dechets: '123e4567-e89b-12d3-a456-426614174002'
       });
-
     expect(response.status).toBe(401);
   });
 
-  test('retourne HTTP 400 avec données invalides', async () => {
+  test('retourne HTTP 400 ou 401 avec données invalides', async () => {
     const response = await request(app)
       .post('/api/bins')
-      .set('Authorization', 'Bearer fake-token-for-test')
+      .set('Authorization', 'Bearer fake-token')
       .send({
         reference: 'BIN-TEST',
-        latitude: 200,        // invalide
+        latitude: 200,
         longitude: 2.3522,
         capacite_totale: 500,
-        id_zone: 'invalid',   // invalide
-        id_type_dechets: 'invalid' // invalide
+        id_zone: 'invalid',
+        id_type_dechets: 'invalid'
       });
-
-    // 400 (validation) ou 401 (token invalide) — les deux sont corrects
     expect([400, 401]).toContain(response.status);
   });
 
@@ -77,7 +98,6 @@ describe('DELETE /api/bins/:id', () => {
   test('retourne HTTP 401 sans token', async () => {
     const response = await request(app)
       .delete('/api/bins/123e4567-e89b-12d3-a456-426614174000');
-
     expect(response.status).toBe(401);
   });
 
@@ -89,9 +109,7 @@ describe('DELETE /api/bins/:id', () => {
 describe('GET /health', () => {
 
   test('retourne HTTP 200 et status ok', async () => {
-    const response = await request(app)
-      .get('/health');
-
+    const response = await request(app).get('/health');
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
     expect(response.body).toHaveProperty('uptime');
@@ -106,9 +124,7 @@ describe('GET /health', () => {
 describe('GET /ping', () => {
 
   test('retourne HTTP 200', async () => {
-    const response = await request(app)
-      .get('/ping');
-
+    const response = await request(app).get('/ping');
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
   });
