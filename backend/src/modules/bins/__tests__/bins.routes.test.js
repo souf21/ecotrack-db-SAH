@@ -2,21 +2,32 @@
 
 // Mock Supabase AVANT tout import
 jest.mock('../../../config/supabase', () => ({
-  from: jest.fn(() => ({
-    select: jest.fn(() => ({
-      eq: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          eq: jest.fn().mockResolvedValue({ data: [], error: null })
-        })),
-        single: jest.fn().mockResolvedValue({ data: null, error: null }),
-        mockResolvedValue: jest.fn().mockResolvedValue({ data: [], error: null })
-      })),
-      limit: jest.fn().mockResolvedValue({ data: [], error: null }),
-      mockResolvedValue: jest.fn().mockResolvedValue({ data: [], error: null })
-    }))
-  })),
+  from: () => ({
+    select: () => ({
+      eq: () => ({ data: [], error: null }),
+      limit: () => ({ data: [], error: null }),
+      single: () => ({ data: null, error: null }),
+      data: [],
+      error: null
+    }),
+    insert: () => ({
+      select: () => ({
+        single: () => ({ data: null, error: null })
+      })
+    }),
+    update: () => ({
+      eq: () => ({
+        select: () => ({
+          single: () => ({ data: null, error: null })
+        })
+      })
+    }),
+    delete: () => ({
+      eq: () => ({ error: null })
+    })
+  }),
   auth: {
-    getUser: jest.fn().mockResolvedValue({ data: null, error: { message: 'invalid' } })
+    getUser: () => ({ data: null, error: { message: 'Token invalide' } })
   }
 }));
 
@@ -25,9 +36,9 @@ jest.mock('../../../config/redis', () => ({
   get: jest.fn().mockResolvedValue(null),
   setex: jest.fn().mockResolvedValue('OK'),
   ping: jest.fn().mockResolvedValue('PONG'),
+  on: jest.fn(),
   keys: jest.fn().mockResolvedValue([]),
-  del: jest.fn().mockResolvedValue(1),
-  on: jest.fn()
+  del: jest.fn().mockResolvedValue(1)
 }));
 
 const request = require('supertest');
@@ -73,7 +84,7 @@ describe('POST /api/bins', () => {
     expect(response.status).toBe(401);
   });
 
-  test('retourne HTTP 400 ou 401 avec données invalides', async () => {
+  test('retourne HTTP 400 avec données invalides', async () => {
     const response = await request(app)
       .post('/api/bins')
       .set('Authorization', 'Bearer fake-token')
