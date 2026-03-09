@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  master:
+    image: mysql:8.0
+    container_name: ecotrack_mysql_master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ecotrack_prod
+      MYSQL_USER: replicator
+      MYSQL_PASSWORD: replpass
+    volumes:
+      - master_data:/var/lib/mysql
+      - ./master.cnf:/etc/mysql/conf.d/master.cnf
+    ports:
+      - "3306:3306"
+    networks:
+      - db_net
+
+  slave1:
+    image: mysql:8.0
+    container_name: ecotrack_mysql_slave1
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ecotrack_prod
+    volumes:
+      - slave1_data:/var/lib/mysql
+      - ./slave.cnf:/etc/mysql/conf.d/slave.cnf
+    ports:
+      - "3307:3306"
+    depends_on:
+      - master
+    networks:
+      - db_net
+
+  slave2:
+    image: mysql:8.0
+    container_name: ecotrack_mysql_slave2
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ecotrack_prod
+    volumes:
+      - slave2_data:/var/lib/mysql
+      - ./slave.cnf:/etc/mysql/conf.d/slave.cnf
+    ports:
+      - "3308:3306"
+    depends_on:
+      - master
+    networks:
+      - db_net
+
+volumes:
+  master_data:
+  slave1_data:
+  slave2_data:
+
+networks:
+  db_net:
