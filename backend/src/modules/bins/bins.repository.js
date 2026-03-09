@@ -63,19 +63,24 @@ const create = async (conteneurData) => {
 };
 
 // Met à jour un conteneur
-const update = async (id, conteneurData) => {
+const update = async (id, binData) => {
   const { data, error } = await supabase
     .from('conteneur')
     .update({
-      ...conteneurData,
-      updated_at: new Date().toISOString() // met à jour la date automatiquement
+      ...binData,
+      updated_at: new Date().toISOString()  // met à jour la date auto
     })
     .eq('id_conteneur', id)
-    .select()
-    .single();
+    .select();  // ← retire .single()
 
   if (error) throw error;
-  return data;
+
+  // data est un tableau (normalement 1 élément)
+  if (data.length === 0) {
+    throw new NotFoundError(`Conteneur ${id} introuvable`);
+  }
+
+  return data[0];  // retourne le premier (et unique) élément mis à jour
 };
 
 // Supprime un conteneur

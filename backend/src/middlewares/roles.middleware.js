@@ -1,22 +1,21 @@
 const supabase = require('../config/supabase');
 
 /**
- * Middleware RBAC - Vérifie que l'utilisateur a le rôle requis
+ * Middleware RBAC - Vérifie que l'utilisateur a au moins UN des rôles requis
  * 
- * Utilisation dans les routes :
- *   router.delete('/:id', authMiddleware, rolesMiddleware('admin'), controller.delete)
+ * Utilisation :
+ *   - Un seul rôle : rolesMiddleware('admin')
+ *   - Plusieurs rôles (OU) : rolesMiddleware(['admin', 'manager'])
  * 
- * @param {string} requiredRole - Le rôle requis ex: 'admin', 'manager', 'collector', 'analyst'
+ * @param {string|string[]} requiredRoles - Rôle(s) requis
  */
-module.exports = (requiredRole) => {
+module.exports = (requiredRoles) => {
   return async (req, res, next) => {
     try {
-      // Vérifie que auth.middleware a bien été appelé avant
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Utilisateur non authentifié' });
       }
 
-      // Récupère tous les rôles du user depuis Supabase
       const { data, error } = await supabase
         .from('user_role')
         .select('role(nom)')
@@ -24,19 +23,22 @@ module.exports = (requiredRole) => {
 
       if (error) throw error;
 
-      // Transforme en tableau simple : [{ role: { nom: 'admin' } }] → ['admin']
-      const roles = data.map(r => r.role.nom);
+      const userRoles = data.map(r => r.role.nom);
 
-      // Vérifie que le user possède le rôle requis
-      if (!roles.includes(requiredRole)) {
+      // Normalise en tableau si c'est une string seule
+      const required = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+
+      // Vérifie si l'utilisateur a au moins UN des rôles requis
+      const hasAccess = required.some(role => userRoles.includes(role));
+
+      if (!hasAccess) {
         return res.status(403).json({
           error: 'Accès refusé',
-          role_requis: requiredRole,
-          roles_utilisateur: roles
+          role_requis: required,
+          roles_utilisateur: userRoles
         });
       }
 
-      // Rôle OK → on passe à la suite
       next();
 
     } catch (err) {

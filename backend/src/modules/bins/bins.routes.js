@@ -139,15 +139,65 @@ router.post('/',
  *         required: true
  *         schema:
  *           type: string
+ *         description: UUID du conteneur à modifier
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reference:
+ *                 type: string
+ *                 example: BIN-001-MODIFIE
+ *               latitude:
+ *                 type: number
+ *                 example: 48.8566
+ *               longitude:
+ *                 type: number
+ *                 example: 2.3522
+ *               capacite_totale:
+ *                 type: integer
+ *                 example: 800
+ *               etat:
+ *                 type: string
+ *                 enum: [actif, inactif, maintenance]
+ *                 example: maintenance
+ *               adresse:
+ *                 type: string
+ *                 example: Nouvelle adresse via PUT
+ *               id_zone:
+ *                 type: string
+ *                 format: uuid
+ *                 example: 550e8400-e29b-41d4-a716-446655440000
+ *               id_type_dechets:
+ *                 type: string
+ *                 format: uuid
+ *                 example: 123e4567-e89b-12d3-a456-426614174000
  *     responses:
  *       200:
- *         description: Conteneur modifié
+ *         description: Conteneur modifié avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Token manquant ou invalide
+ *       403:
+ *         description: Rôle insuffisant
  *       404:
  *         description: Conteneur introuvable
  */
 router.put('/:id',
   authMiddleware,
-  rolesMiddleware('manager'),
+  rolesMiddleware(['admin', 'manager']),
   validate(updateBinSchema),
   binsController.update
 );
