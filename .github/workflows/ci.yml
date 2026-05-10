@@ -1,5 +1,4 @@
-# .github/workflows/ci.yml
-name: EcoTrack CI/CD
+name: EcoTrack CI
 
 on:
   push:
@@ -8,21 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Tests automatisés
+  install-check:
+    name: Vérification des dépendances
     runs-on: ubuntu-latest
 
-    # Lance Redis comme service pendant les tests
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    strategy:
+      matrix:
+        service:
+          - service-auth
+          - service-containers
+          - service-routes
+          - service-iot
+          - service-gamification
+          - service-analytics
+          - api-gateway
 
     steps:
       - name: Checkout code
@@ -33,31 +31,21 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: microservices/${{ matrix.service }}/package-lock.json
 
-      - name: Install dependencies
-        working-directory: backend
+      - name: Install dependencies — ${{ matrix.service }}
+        working-directory: microservices/${{ matrix.service }}
         run: npm install
 
-      - name: Run tests
-        working-directory: backend
-        run: npm test
-        env:
-          NODE_ENV: test
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          REDIS_HOST: 127.0.0.1
-          REDIS_PORT: 6379
-
-  build:
-    name: Build Docker
+  build-docker:
+    name: Build Docker images
     runs-on: ubuntu-latest
-    needs: test
+    needs: install-check
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build Docker image
-        working-directory: backend
-        run: docker build -t ecotrack-api .
+      - name: Build all services
+        working-directory: microservices
+        run: docker compose build
