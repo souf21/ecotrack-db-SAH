@@ -120,7 +120,7 @@ router.get('/:id', cache(3600), binsController.getById);
  */
 router.post('/',
   authMiddleware,
-  rolesMiddleware('admin'),
+  rolesMiddleware('gestionnaire'),
   validate(createBinSchema),
   binsController.create
 );
@@ -197,7 +197,7 @@ router.post('/',
  */
 router.put('/:id',
   authMiddleware,
-  rolesMiddleware(['admin', 'manager']),
+  rolesMiddleware(['gestionnaire', 'agent']),
   validate(updateBinSchema),
   binsController.update
 );
@@ -226,7 +226,7 @@ router.put('/:id',
  */
 router.delete('/:id',
   authMiddleware,
-  rolesMiddleware('admin'),
+  rolesMiddleware('gestionnaire'),
   binsController.remove
 );
 

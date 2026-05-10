@@ -1,91 +1,94 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../services/supabase';
+import { getUser } from '../../services/auth';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-export default function PointsDeCollecte() {
+export default function CollecteEnCours({ user }) {
   const [conteneurs, setConteneurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
 
-  // Centre de Paris
   const center = [48.8566, 2.3522];
 
   useEffect(() => {
-    // Simulation de données (tu pourras remplacer par Supabase plus tard)
-    const mockData = [
-      { id: 1, reference: "ECO-0002", lat: 48.8566, lng: 2.3522, adresse: "2ème Arrondissement", type: "RECYCLABLE", capacite: 360, remplissage: 52 },
-      { id: 2, reference: "ECO-0003", lat: 48.8630, lng: 2.3400, adresse: "3ème Arrondissement", type: "ORGANIQUE", capacite: 660, remplissage: 9 },
-      { id: 3, reference: "ECO-0004", lat: 48.8500, lng: 2.3700, adresse: "4ème Arrondissement", type: "ENCOMBRANTS", capacite: 1100, remplissage: 71 },
-      { id: 4, reference: "ECO-0005", lat: 48.8700, lng: 2.3000, adresse: "5ème Arrondissement", type: "OMR", capacite: 240, remplissage: 66 },
-      { id: 5, reference: "ECO-0006", lat: 48.8400, lng: 2.3800, adresse: "13ème Arrondissement", type: "RECYCLABLE", capacite: 420, remplissage: 88 },
-    ];
-    setConteneurs(mockData);
-    setLoading(false);
+    async function fetchPoints() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('conteneur')
+          .select('id_conteneur, reference, adresse, latitude, longitude, capacite, etat, type_dechets:id_type_dechets(nom)')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
+
+        if (error) throw error;
+        setConteneurs(data || []);
+      } catch (err) {
+        console.error('[CollecteEnCours] fetch:', err.message);
+        setConteneurs([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPoints();
   }, []);
 
-  const filtered = useMemo(() => {
-    return conteneurs.filter(c => {
-      const matchSearch = !search || 
-        c.reference.toLowerCase().includes(search.toLowerCase()) ||
-        c.adresse.toLowerCase().includes(search.toLowerCase());
-      const matchType = !filterType || c.type === filterType;
-      return matchSearch && matchType;
-    });
-  }, [conteneurs, search, filterType]);
+  const types = [...new Set(conteneurs.map(c => c.type_dechets?.nom).filter(Boolean))];
 
-  if (loading) return <div className="py-12 text-center">Chargement de la carte...</div>;
+  const filtered = conteneurs.filter(c => {
+    const matchSearch = !search ||
+      c.reference?.toLowerCase().includes(search.toLowerCase()) ||
+      c.adresse?.toLowerCase().includes(search.toLowerCase());
+    const matchType = !filterType || c.type_dechets?.nom === filterType;
+    return matchSearch && matchType;
+  });
+
+  if (loading) return <div className="py-12 text-center text-gray-400">Chargement de la carte...</div>;
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
-        <h1 className="text-2xl font-bold text-gray-800">Trouvez un point de collecte près de chez vous</h1>
-        <p className="text-emerald-700 mt-1">2 000 conteneurs connectés sur toute la métropole</p>
+        <h1 className="text-2xl font-bold text-gray-800">Points de collecte</h1>
+        <p className="text-emerald-700 mt-1">{conteneurs.length} conteneur(s) sur la carte</p>
       </div>
 
-      {/* Recherche + Filtre */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-4 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Rechercher un point de collecte..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-
+      <div className="flex gap-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Rechercher un conteneur..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 min-w-48 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
+        />
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="bg-white border border-gray-200 rounded-xl px-5 py-3 focus:outline-none focus:border-emerald-500"
+          onChange={e => setFilterType(e.target.value)}
+          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
         >
           <option value="">Tous les types</option>
-          <option value="RECYCLABLE">Recyclable</option>
-          <option value="ORGANIQUE">Organique</option>
-          <option value="ENCOMBRANTS">Encombrants</option>
-          <option value="OMR">OMR</option>
+          {types.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
 
-      {/* Carte Interactive */}
-      <div className="h-[480px] rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
+      <div className="h-112.5 rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
         <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; OpenStreetMap contributors'
+            attribution="&copy; OpenStreetMap contributors"
           />
-          {filtered.map((c) => (
-            <Marker key={c.id} position={[c.lat, c.lng]}>
+          {filtered.map(c => (
+            <Marker key={c.id_conteneur} position={[Number(c.latitude), Number(c.longitude)]}>
               <Popup>
-                <div className="min-w-[200px]">
-                  <strong className="text-lg">{c.reference}</strong><br />
-                  {c.adresse}<br />
-                  <span className="text-emerald-600">{c.type}</span> • {c.capacite}L<br />
-                  Remplissage : <strong>{c.remplissage}%</strong>
+                <div className="min-w-45">
+                  <strong>{c.reference}</strong><br />
+                  {c.adresse && <span className="text-gray-600">{c.adresse}</span>}<br />
+                  {c.type_dechets?.nom && <span className="text-emerald-600">{c.type_dechets.nom}</span>}
+                  {c.capacite && <span> • {c.capacite}L</span>}
+                  <br />
+                  <span className={c.etat === 'alerte' ? 'text-red-600 font-semibold' : 'text-gray-500'}>
+                    État : {c.etat || 'N/A'}
+                  </span>
                 </div>
               </Popup>
             </Marker>
@@ -93,32 +96,30 @@ export default function PointsDeCollecte() {
         </MapContainer>
       </div>
 
-      {/* Liste en cartes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filtered.map((c) => (
-          <div key={c.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition">
+        {filtered.map(c => (
+          <div key={c.id_conteneur} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition shadow-sm">
             <div className="flex justify-between items-start">
               <div>
-                <div className="font-bold text-xl">{c.reference}</div>
-                <div className="text-gray-500">{c.adresse}</div>
+                <div className="font-bold text-gray-800">{c.reference}</div>
+                {c.adresse && <div className="text-gray-500 text-sm">{c.adresse}</div>}
               </div>
-              <span className="px-4 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full">
-                {c.type}
-              </span>
-            </div>
-
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Remplissage</span>
-                <span className="font-semibold">{c.remplissage}%</span>
-              </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${c.remplissage > 75 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                  style={{ width: `${c.remplissage}%` }}
-                />
+              <div className="flex flex-col items-end gap-1">
+                {c.type_dechets?.nom && (
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                    {c.type_dechets.nom}
+                  </span>
+                )}
+                {c.etat === 'alerte' && (
+                  <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                    Alerte
+                  </span>
+                )}
               </div>
             </div>
+            {c.capacite && (
+              <div className="mt-3 text-sm text-gray-500">Capacité : {c.capacite}L</div>
+            )}
           </div>
         ))}
       </div>

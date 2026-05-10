@@ -1,11 +1,11 @@
 {
-  "name": "backend",
+  "name": "service-auth",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "EcoTrack — Authentication microservice",
+  "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node src/server.js",
+    "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "jest": "^30.2.0",
+    "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
 }

@@ -16,7 +16,8 @@ const options = {
       }
     },
     servers: [
-      { url: 'http://localhost:5000', description: 'Serveur développement' }
+      { url: 'http://localhost:5002', description: 'service-containers dev' },
+      { url: 'http://localhost:80', description: 'Via API Gateway' }
     ],
     components: {
       securitySchemes: {

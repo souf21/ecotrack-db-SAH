@@ -12,7 +12,7 @@ const MENU = [
   { id: 'recompenses',  label: 'Mes recompenses',      icon: '🏆' },
 ];
 
-export default function CitoyenLayout({ user }) {
+export default function CitoyenLayout({ user, onUserUpdate }) {
   const [page, setPage] = useState('points');
 
   return (
@@ -76,7 +76,7 @@ export default function CitoyenLayout({ user }) {
         {/* Contenu */}
         <div className="p-6">
           {page === 'points'       && <PointsDeCollecte user={user} />}
-          {page === 'signaler'     && <Signalement user={user} />}
+          {page === 'signaler'     && <Signalement user={user} onUserUpdate={onUserUpdate} />}
           {page === 'signalements' && <SuiviSignalements user={user} />}
           {page === 'recompenses'  && <MesRecompenses user={user} />}
         </div>

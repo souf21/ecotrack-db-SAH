@@ -1,13 +1,31 @@
 # Node
-node_modules/
-npm-debug.log
-yarn.lock
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
 
-# Env
-.env
-.env.local
+# Env files (never commit secrets)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Logs (runtime output, not source)
+**/logs/
+**/*.log
+
+# Test coverage reports
+**/coverage/
+
+# Build output
+frontend/dist/
+frontend/build/
 
 # OS
 .DS_Store
 Thumbs.db
-".env" 
+
+# Claude Code tooling
+.claude/
+
+# Supabase local runtime
+supabase/.branches/
+supabase/.temp/

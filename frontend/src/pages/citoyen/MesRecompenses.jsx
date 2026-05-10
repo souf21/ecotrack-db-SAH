@@ -89,12 +89,12 @@ export default function MesRecompenses({ user }) {
 
     setStats({ points, totalSignalements: total });
 
-    // Historique des points — chaque signalement = +25 pts
+    // Historique des points — chaque signalement = +10 pts
     setHistorique((signalements || []).map(s => ({
       id:          s.id_signalement,
       description: s.description || s.type,
       date:        s.date_signalement,
-      points:      25,
+      points:      10,
     })));
 
     setLoading(false);

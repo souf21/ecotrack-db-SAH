@@ -1,11 +1,12 @@
 -- Table partitionnée
 CREATE TABLE mesure_partitioned (
-    id_mesure uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id_mesure uuid DEFAULT uuid_generate_v4(),
     valeur decimal(10,2),
     datetime timestamptz NOT NULL,
     unite varchar(20),
     id_capteur uuid NOT NULL REFERENCES capteur(id_capteur),
-    created_at timestamptz DEFAULT now()
+    created_at timestamptz DEFAULT now(),
+    PRIMARY KEY (id_mesure, datetime)
 ) PARTITION BY RANGE (datetime);
 
 -- Exemple : partitions mensuelles

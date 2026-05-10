@@ -5,7 +5,7 @@ export async function login(email, password) {
     email,
     password
   });
-  if (error) throw new Error('Email ou mot de passe incorrect');
+  if (error) throw new Error(`Auth échouée: ${error.message}`);
 
   // Récupérer le rôle
   const { data: roleData, error: roleError } = await supabase
@@ -14,21 +14,29 @@ export async function login(email, password) {
     .eq('id_user', data.user.id)
     .single();
 
-  if (roleError) throw new Error('Impossible de recuperer le role');
+  if (roleError) throw new Error(`Rôle introuvable (${roleError.code}: ${roleError.message})`);
+  if (!roleData?.role?.nom) throw new Error(`Rôle non assigné — vérifiez la table user_role pour l'utilisateur ${data.user.id}`);
 
   // Récupérer le profil
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('user')
     .select('nom, prenom, point_total')
     .eq('id_user', data.user.id)
     .single();
 
+  if (profileError) throw new Error(`Profil introuvable (${profileError.code}: ${profileError.message})`);
+
+  const roleName = roleData.role.nom;
+  if (!['gestionnaire', 'agent', 'citoyen'].includes(roleName)) {
+    throw new Error(`Rôle inconnu: "${roleName}" — doit être gestionnaire, agent ou citoyen`);
+  }
+
   const user = {
     id:        data.user.id,
     email:     data.user.email,
-    role:      roleData.role.nom,
-    nom:       profile ? `${profile.prenom} ${profile.nom}` : email,
-    initiales: profile ? `${profile.prenom[0]}${profile.nom[0]}` : '??',
+    role:      roleName,
+    nom:       profile ? `${profile.prenom || ''} ${profile.nom || ''}`.trim() || email : email,
+    initiales: ((profile?.prenom?.[0] || '') + (profile?.nom?.[0] || '')).toUpperCase() || '??',
     points:    profile?.point_total || 0,
     token:     data.session.access_token
   };
@@ -39,7 +47,11 @@ export async function login(email, password) {
 }
 
 export async function logout() {
-  await supabase.auth.signOut();
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error('[logout] supabase signOut failed:', err.message);
+  }
   localStorage.removeItem('user');
   localStorage.removeItem('token');
   window.location.href = '/';

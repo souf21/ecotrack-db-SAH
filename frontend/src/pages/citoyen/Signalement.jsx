@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Send, Camera, MapPin, X } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
-export default function Signalement({ user }) {
+export default function Signalement({ user, onUserUpdate }) {
   const [conteneurs, setConteneurs] = useState([]);
   const [form, setForm]             = useState({
     id_conteneur: '',
@@ -60,19 +60,38 @@ export default function Signalement({ user }) {
         photo_url = urlData.publicUrl;
       }
 
-      // Insérer le signalement
-      const { error: insertError } = await supabase
-        .from('signalement')
-        .insert({
-          id_user:        user.id,
-          id_conteneur:   form.id_conteneur || null,
-          type:           form.type,
-          description:    form.description,
-          photo_url:      photo_url,
-          statut:         'nouveau',
-        });
+      // Soumettre via l'API gamification (points attribués automatiquement)
+      const res = await fetch('http://localhost/api/gamification/signalements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+        body: JSON.stringify({
+          type:         form.type,
+          description:  form.description,
+          photo_url:    photo_url,
+          id_conteneur: form.id_conteneur || null,
+        }),
+      });
 
-      if (insertError) throw insertError;
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erreur lors de l\'envoi');
+      }
+
+      // Refresh point_total and update user in state + localStorage
+      const { data: profile } = await supabase
+        .from('user')
+        .select('point_total')
+        .eq('id_user', user.id)
+        .single();
+
+      if (profile && onUserUpdate) {
+        const updatedUser = { ...user, points: profile.point_total || 0 };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        onUserUpdate(updatedUser);
+      }
 
       setSuccess(true);
       setForm({ id_conteneur: '', type: '', description: '' });

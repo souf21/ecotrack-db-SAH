@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+
+  # ── API Gateway (public entry point) ─────────────────────────────────────
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "80:80"
+    environment:
+      PORT: 80
+      NODE_ENV: production
+      SERVICE_AUTH_URL: http://service-auth:5001
+      SERVICE_CONTAINERS_URL: http://service-containers:5002
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    depends_on:
+      - service-auth
+      - service-containers
+    restart: unless-stopped
+
+  # ── Auth service ──────────────────────────────────────────────────────────
+  service-auth:
+    build: ./service-auth
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    restart: unless-stopped
+
+  # ── Containers service ────────────────────────────────────────────────────
+  service-containers:
+    build: ./service-containers
+    ports:
+      - "5002:5002"
+    environment:
+      PORT: 5002
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ── Redis (shared cache) ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped

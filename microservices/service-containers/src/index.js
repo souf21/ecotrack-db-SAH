@@ -1,12 +1,9 @@
-// Point d'entrée de l'application
-// Ce fichier charge les variables d'environnement et démarre le serveur
+require('dotenv').config();
+const app = require('./app');
 
-require('dotenv').config(); // DOIT être en premier pour charger le .env
-const app = require('./app'); // On importe l'app Express configurée
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 app.listen(PORT, () => {
-  console.log(`🚀 EcoTrack API démarrée sur le port ${PORT}`);
-  console.log(`🌍 Environnement : ${process.env.NODE_ENV}`);
+  console.log(`[service-containers] running on port ${PORT}`);
+  console.log(`[service-containers] env: ${process.env.NODE_ENV || 'development'}`);
 });

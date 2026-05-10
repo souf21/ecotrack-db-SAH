@@ -1,38 +1,49 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Plus, Eye, Pencil, Trash2, X } from 'lucide-react';
+import { Search, Filter, Plus, Eye, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { getUser } from '../../services/auth';
 
 export default function Conteneurs() {
   const [conteneurs, setConteneurs]   = useState([]);
   const [zones, setZones]             = useState([]);
   const [types, setTypes]             = useState([]);
+  const [fillMap, setFillMap]         = useState({});
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [filterZone, setFilterZone]   = useState('');
   const [filterType, setFilterType]   = useState('');
   const [filterEtat, setFilterEtat]   = useState('');
   const [page, setPage]               = useState(1);
-  const [modal, setModal]             = useState(null); // 'create' | 'edit' | 'view'
+  const [modal, setModal]             = useState(null);
   const [selected, setSelected]       = useState(null);
   const [form, setForm]               = useState({});
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
   const perPage = 15;
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  const token   = getUser()?.token;
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => { fetchAll(); }, []);
 
   async function fetchAll() {
     setLoading(true);
-    const [c, z, t] = await Promise.all([
+    const [c, z, t, fillRes] = await Promise.all([
       supabase.from('conteneur').select('*, zone(nom_zone), type_dechets(libelle)'),
       supabase.from('zone').select('id_zone, nom_zone'),
       supabase.from('type_dechets').select('id_type_dechets, libelle'),
+      supabase.rpc('get_latest_fill_per_container'),
     ]);
     setConteneurs(c.data || []);
     setZones(z.data || []);
     setTypes(t.data || []);
+
+    const map = {};
+    (fillRes.data || []).forEach(row => {
+      map[row.id_conteneur] = { fill: Math.round(Number(row.fill_pct)), date: row.measured_at };
+    });
+    setFillMap(map);
+
     setLoading(false);
   }
 
@@ -47,8 +58,15 @@ export default function Conteneurs() {
     });
   }, [conteneurs, search, filterZone, filterType, filterEtat]);
 
-  const paginated   = filtered.slice((page - 1) * perPage, page * perPage);
-  const totalPages  = Math.ceil(filtered.length / perPage);
+  const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.ceil(filtered.length / perPage);
+
+  const alertConteneurs = useMemo(
+    () => conteneurs
+      .filter(c => fillMap[c.id_conteneur]?.fill > 80)
+      .sort((a, b) => (fillMap[b.id_conteneur]?.fill || 0) - (fillMap[a.id_conteneur]?.fill || 0)),
+    [conteneurs, fillMap]
+  );
 
   function etatColor(etat) {
     if (etat === 'actif')       return 'bg-green-100 text-green-700';
@@ -56,11 +74,13 @@ export default function Conteneurs() {
     return 'bg-red-100 text-red-700';
   }
 
-  function openCreate() {
-    setForm({ etat: 'actif' });
-    setError('');
-    setModal('create');
+  function fillColor(pct) {
+    if (pct > 80) return 'bg-red-500';
+    if (pct > 50) return 'bg-orange-400';
+    return 'bg-[#00C896]';
   }
+
+  function openCreate() { setForm({ etat: 'actif' }); setError(''); setModal('create'); }
 
   function openEdit(c) {
     setSelected(c);
@@ -78,23 +98,25 @@ export default function Conteneurs() {
     setModal('edit');
   }
 
-  function openView(c) {
-    setSelected(c);
-    setModal('view');
-  }
+  function openView(c) { setSelected(c); setModal('view'); }
 
   async function handleSave() {
     setSaving(true);
     setError('');
     try {
+      const payload = {
+        ...form,
+        latitude:        form.latitude        !== '' && form.latitude        != null ? parseFloat(form.latitude)        : null,
+        longitude:       form.longitude       !== '' && form.longitude       != null ? parseFloat(form.longitude)       : null,
+        capacite_totale: form.capacite_totale !== '' && form.capacite_totale != null ? parseInt(form.capacite_totale)   : null,
+      };
       if (modal === 'create') {
-        const { error } = await supabase.from('conteneur').insert(form);
+        const { error } = await supabase.from('conteneur').insert(payload);
         if (error) throw error;
+        // DB trigger trg_auto_fill_sensor creates the capteur + initial 0% mesure automatically
       } else {
         const { error } = await supabase
-          .from('conteneur')
-          .update(form)
-          .eq('id_conteneur', selected.id_conteneur);
+          .from('conteneur').update(payload).eq('id_conteneur', selected.id_conteneur);
         if (error) throw error;
       }
       await fetchAll();
@@ -108,7 +130,8 @@ export default function Conteneurs() {
 
   async function handleDelete(id) {
     if (!confirm('Supprimer ce conteneur ?')) return;
-    await supabase.from('conteneur').delete().eq('id_conteneur', id);
+    const res = await fetch(`http://localhost/api/bins/${id}`, { method: 'DELETE', headers });
+    if (!res.ok) { alert('Erreur lors de la suppression'); return; }
     await fetchAll();
   }
 
@@ -124,8 +147,6 @@ export default function Conteneurs() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-wrap">
-
-          {/* Recherche */}
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
             <Search className="h-4 w-4 text-gray-400" />
             <input
@@ -135,8 +156,6 @@ export default function Conteneurs() {
               className="w-48 bg-transparent text-sm outline-none placeholder:text-gray-400"
             />
           </div>
-
-          {/* Filtres */}
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
             <select value={filterZone} onChange={e => { setFilterZone(e.target.value); setPage(1); }}
@@ -158,11 +177,16 @@ export default function Conteneurs() {
             </select>
           </div>
         </div>
-
-        <button onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-[#00C896] px-4 py-2 text-sm font-medium text-white hover:bg-[#00a87e]">
-          <Plus className="h-4 w-4" /> Nouveau conteneur
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchAll} title="Rafraîchir les données IoT"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+            <RefreshCw className="h-3.5 w-3.5" /> Rafraîchir
+          </button>
+          <button onClick={openCreate}
+            className="flex items-center gap-2 rounded-lg bg-[#00C896] px-4 py-2 text-sm font-medium text-white hover:bg-[#00a87e]">
+            <Plus className="h-4 w-4" /> Nouveau conteneur
+          </button>
+        </div>
       </div>
 
       <p className="text-sm text-gray-400">{filtered.length} conteneurs trouvés</p>
@@ -176,40 +200,56 @@ export default function Conteneurs() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Type</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Zone</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Capacite</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Remplissage</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Etat</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {paginated.map(c => (
-              <tr key={c.id_conteneur} className="border-b border-gray-50 hover:bg-gray-50 last:border-0">
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800">{c.reference}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{c.type_dechets?.libelle || '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{c.zone?.nom_zone || '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-700">{c.capacite_totale}L</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${etatColor(c.etat)}`}>
-                    {c.etat || '—'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => openView(c)}
-                      className="rounded p-1.5 hover:bg-gray-100">
-                      <Eye className="h-3.5 w-3.5 text-gray-400" />
-                    </button>
-                    <button onClick={() => openEdit(c)}
-                      className="rounded p-1.5 hover:bg-gray-100">
-                      <Pencil className="h-3.5 w-3.5 text-gray-400" />
-                    </button>
-                    <button onClick={() => handleDelete(c.id_conteneur)}
-                      className="rounded p-1.5 hover:bg-red-50">
-                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {paginated.map(c => {
+              const fi = fillMap[c.id_conteneur];
+              return (
+                <tr key={c.id_conteneur} className="border-b border-gray-50 hover:bg-gray-50 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800">{c.reference}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{c.type_dechets?.libelle || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{c.zone?.nom_zone || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-700">{c.capacite_totale}L</td>
+                  <td className="px-4 py-3">
+                    {fi ? (
+                      <div className="flex items-center gap-1.5 min-w-22.5">
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${fillColor(fi.fill)}`} style={{ width: `${fi.fill}%` }} />
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 shrink-0 w-8 text-right">{fi.fill}%</span>
+                        {fi.fill > 80 && (
+                          <span className="shrink-0 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold leading-none">!</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${etatColor(c.etat)}`}>
+                      {c.etat || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => openView(c)} className="rounded p-1.5 hover:bg-gray-100">
+                        <Eye className="h-3.5 w-3.5 text-gray-400" />
+                      </button>
+                      <button onClick={() => openEdit(c)} className="rounded p-1.5 hover:bg-gray-100">
+                        <Pencil className="h-3.5 w-3.5 text-gray-400" />
+                      </button>
+                      <button onClick={() => handleDelete(c.id_conteneur)} className="rounded p-1.5 hover:bg-red-50">
+                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -220,13 +260,64 @@ export default function Conteneurs() {
           {Array.from({ length: totalPages }, (_, i) => (
             <button key={i} onClick={() => setPage(i + 1)}
               className={`h-8 w-8 rounded-md text-xs font-medium transition-colors ${
-                page === i + 1
-                  ? 'bg-[#00C896] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                page === i + 1 ? 'bg-[#00C896] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {i + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Alertes conteneurs */}
+      {alertConteneurs.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-red-500">⚠</span>
+            <h2 className="text-base font-bold text-gray-800">Alertes conteneurs</h2>
+            <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+              {alertConteneurs.length} alerte(s)
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-red-100 bg-white shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-red-50 bg-red-50">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-red-700">Conteneur</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-red-700">Zone</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-red-700">Adresse</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-red-700">Remplissage</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-red-700">Dernière mesure</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alertConteneurs.map(c => {
+                  const fi = fillMap[c.id_conteneur];
+                  return (
+                    <tr key={c.id_conteneur} className="border-b border-red-50 last:border-0 hover:bg-red-50/40">
+                      <td className="px-4 py-2.5 font-mono text-xs font-semibold text-gray-800">{c.reference}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">{c.zone?.nom_zone || '—'}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 max-w-45 truncate">{c.adresse || '—'}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-red-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-500 rounded-full" style={{ width: `${fi?.fill}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-red-600">{fi?.fill}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">
+                        {fi?.date
+                          ? new Date(fi.date).toLocaleString('fr-FR', {
+                              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                            })
+                          : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -254,6 +345,23 @@ export default function Conteneurs() {
                   <span className="font-medium text-gray-700">{val || '—'}</span>
                 </div>
               ))}
+              {fillMap[selected.id_conteneur] && (
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-400">Remplissage</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${fillColor(fillMap[selected.id_conteneur].fill)}`}
+                        style={{ width: `${fillMap[selected.id_conteneur].fill}%` }}
+                      />
+                    </div>
+                    <span className="font-medium text-gray-700">{fillMap[selected.id_conteneur].fill}%</span>
+                    {fillMap[selected.id_conteneur].fill > 80 && (
+                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">PLEIN</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -272,10 +380,10 @@ export default function Conteneurs() {
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'Reference',  key: 'reference',       type: 'text' },
-                { label: 'Adresse',    key: 'adresse',         type: 'text' },
-                { label: 'Latitude',   key: 'latitude',        type: 'number' },
-                { label: 'Longitude',  key: 'longitude',       type: 'number' },
+                { label: 'Reference',    key: 'reference',       type: 'text' },
+                { label: 'Adresse',      key: 'adresse',         type: 'text' },
+                { label: 'Latitude',     key: 'latitude',        type: 'number' },
+                { label: 'Longitude',    key: 'longitude',       type: 'number' },
                 { label: 'Capacite (L)', key: 'capacite_totale', type: 'number' },
               ].map(({ label, key, type }) => (
                 <div key={key}>
@@ -336,4 +444,4 @@ export default function Conteneurs() {
 
     </div>
   );
-} 
+}

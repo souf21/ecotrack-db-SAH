@@ -2,6 +2,7 @@
 // COUCHE CONTROLLER : lien entre HTTP et Service
 
 const binsService = require('./bins.service');
+const { invalidateCache } = require('../../middlewares/cache.middleware');
 
 // GET /api/conteneurs
 const getAll = async (req, res, next) => {
@@ -32,6 +33,7 @@ const getById = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const data = await binsService.createBin(req.body);
+    await invalidateCache('/api/bins');
     res.status(201).json({ success: true, data });
   } catch (err) {
     next(err);
@@ -42,6 +44,7 @@ const create = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const data = await binsService.updateBin(req.params.id, req.body);
+    await invalidateCache('/api/bins');
     res.status(200).json({ success: true, data });
   } catch (err) {
     next(err);
@@ -52,6 +55,7 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const result = await binsService.deleteBin(req.params.id);
+    await invalidateCache('/api/bins');
     res.status(200).json({ success: true, ...result });
   } catch (err) {
     next(err);
