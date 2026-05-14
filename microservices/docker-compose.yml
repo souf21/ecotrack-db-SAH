@@ -1,6 +1,7 @@
+version: '3.8'
+
 services:
 
-  # ── API Gateway (point d'entrée public) ──────────────────────────────────
   api-gateway:
     build: ./api-gateway
     ports:
@@ -25,7 +26,6 @@ services:
       - service-analytics
     restart: unless-stopped
 
-  # ── Auth ──────────────────────────────────────────────────────────────────
   service-auth:
     build: ./service-auth
     ports:
@@ -38,7 +38,6 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     restart: unless-stopped
 
-  # ── Containers ────────────────────────────────────────────────────────────
   service-containers:
     build: ./service-containers
     ports:
@@ -55,7 +54,6 @@ services:
       - redis
     restart: unless-stopped
 
-  # ── Routes ────────────────────────────────────────────────────────────────
   service-routes:
     build: ./service-routes
     ports:
@@ -72,7 +70,6 @@ services:
       - service-iot
     restart: unless-stopped
 
-  # ── IoT ───────────────────────────────────────────────────────────────────
   service-iot:
     build: ./service-iot
     ports:
@@ -87,7 +84,6 @@ services:
       FILL_ALERT_THRESHOLD: 80
     restart: unless-stopped
 
-  # ── Gamification ──────────────────────────────────────────────────────────
   service-gamification:
     build: ./service-gamification
     ports:
@@ -102,7 +98,6 @@ services:
       POINTS_SIGNALEMENT_TRAITE: 20
     restart: unless-stopped
 
-  # ── Analytics ─────────────────────────────────────────────────────────────
   service-analytics:
     build: ./service-analytics
     ports:
@@ -116,7 +111,6 @@ services:
       FILL_ALERT_THRESHOLD: 80
     restart: unless-stopped
 
-  # ── Redis (cache partagé) ─────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
