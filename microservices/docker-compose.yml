@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
 
-  # ── API Gateway (public entry point) ─────────────────────────────────────
+  # ── API Gateway (point d'entrée public) ──────────────────────────────────
   api-gateway:
     build: ./api-gateway
     ports:
@@ -12,14 +10,22 @@ services:
       NODE_ENV: production
       SERVICE_AUTH_URL: http://service-auth:5001
       SERVICE_CONTAINERS_URL: http://service-containers:5002
+      SERVICE_ROUTES_URL: http://service-routes:5003
+      SERVICE_IOT_URL: http://service-iot:5004
+      SERVICE_GAMIFICATION_URL: http://service-gamification:5005
+      SERVICE_ANALYTICS_URL: http://service-analytics:5006
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     depends_on:
       - service-auth
       - service-containers
+      - service-routes
+      - service-iot
+      - service-gamification
+      - service-analytics
     restart: unless-stopped
 
-  # ── Auth service ──────────────────────────────────────────────────────────
+  # ── Auth ──────────────────────────────────────────────────────────────────
   service-auth:
     build: ./service-auth
     ports:
@@ -29,9 +35,10 @@ services:
       NODE_ENV: production
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     restart: unless-stopped
 
-  # ── Containers service ────────────────────────────────────────────────────
+  # ── Containers ────────────────────────────────────────────────────────────
   service-containers:
     build: ./service-containers
     ports:
@@ -41,13 +48,75 @@ services:
       NODE_ENV: production
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
       - redis
     restart: unless-stopped
 
-  # ── Redis (shared cache) ──────────────────────────────────────────────────
+  # ── Routes ────────────────────────────────────────────────────────────────
+  service-routes:
+    build: ./service-routes
+    ports:
+      - "5003:5003"
+    environment:
+      PORT: 5003
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SERVICE_IOT_URL: http://service-iot:5004
+      IOT_API_KEY: ${IOT_API_KEY}
+    depends_on:
+      - service-iot
+    restart: unless-stopped
+
+  # ── IoT ───────────────────────────────────────────────────────────────────
+  service-iot:
+    build: ./service-iot
+    ports:
+      - "5004:5004"
+    environment:
+      PORT: 5004
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      IOT_API_KEY: ${IOT_API_KEY}
+      FILL_ALERT_THRESHOLD: 80
+    restart: unless-stopped
+
+  # ── Gamification ──────────────────────────────────────────────────────────
+  service-gamification:
+    build: ./service-gamification
+    ports:
+      - "5005:5005"
+    environment:
+      PORT: 5005
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POINTS_SIGNALEMENT_SOUMIS: 10
+      POINTS_SIGNALEMENT_TRAITE: 20
+    restart: unless-stopped
+
+  # ── Analytics ─────────────────────────────────────────────────────────────
+  service-analytics:
+    build: ./service-analytics
+    ports:
+      - "5006:5006"
+    environment:
+      PORT: 5006
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      FILL_ALERT_THRESHOLD: 80
+    restart: unless-stopped
+
+  # ── Redis (cache partagé) ─────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     ports:

@@ -10,17 +10,20 @@ Plateforme de gestion intelligente des déchets urbains — microservices + Reac
 ## Architecture
 
 ```
-nginx (port 80)
-  ├── /api/auth         → service-auth         (port 5001)
-  ├── /api/bins         → service-containers   (port 5002)
-  ├── /api/routes       → service-routes       (port 5003)
-  ├── /api/iot          → service-iot          (port 5004)
-  ├── /api/gamification → service-gamification (port 5005)
-  └── /api/analytics    → service-analytics    (port 5006)
-
-Frontend (React + Vite)  →  http://localhost:5173
-Database                 →  Supabase local (PostgreSQL) → http://127.0.0.1:54323
-Cache                    →  Redis (via Docker)
+Navigateur
+    ↓
+Frontend React (port 5173)
+    ↓
+Nginx / API Gateway (port 80)
+    ├── /api/auth         → service-auth         (port 5001)
+    ├── /api/bins         → service-containers   (port 5002)
+    ├── /api/routes       → service-routes       (port 5003)
+    ├── /api/iot          → service-iot          (port 5004)
+    ├── /api/gamification → service-gamification (port 5005)
+    └── /api/analytics    → service-analytics    (port 5006)
+    
+Base de données → Supabase local (PostgreSQL) → http://127.0.0.1:54323
+Cache           → Redis (via Docker)
 ```
 
 ---
@@ -29,13 +32,14 @@ Cache                    →  Redis (via Docker)
 
 Installer ces outils avant de commencer :
 
-| Outil | Version | Commande d'installation |
-|---|---|---|
-| Node.js | v18+ | https://nodejs.org |
-| Docker Desktop | dernière | https://docker.com |
-| Supabase CLI | dernière | `npm install -g supabase` |
+| Outil | Commande d'installation |
+|---|---|
+| **Node.js v18+** | https://nodejs.org |
+| **Docker Desktop** | https://docker.com — le démarrer avant toute chose |
+| **Supabase CLI** | Via Scoop (Windows) : `scoop install supabase` |
 
-Vérifier que Docker Desktop est **démarré** avant de continuer.
+> Si Scoop n'est pas installé : `irm get.scoop.sh | iex` dans PowerShell, puis `scoop install supabase`.  
+> Alternative sans installation : remplacer `supabase` par `npx supabase` dans toutes les commandes.
 
 ---
 
@@ -56,10 +60,9 @@ cd ecotrack-db-SAH
 supabase start
 ```
 
-Cela lance PostgreSQL, Auth et Storage dans Docker.  
-Attendre que la commande affiche les URLs (environ 30 secondes au premier lancement).
+Lance PostgreSQL + Auth en local dans Docker. Attendre que la commande affiche les URLs (~30 secondes au premier lancement).
 
-> Studio (interface base de données) : **http://127.0.0.1:54323**
+> Interface base de données : **http://127.0.0.1:54323**
 
 ---
 
@@ -69,40 +72,36 @@ Attendre que la commande affiche les URLs (environ 30 secondes au premier lancem
 supabase db reset
 ```
 
-Cette commande fait **trois choses en une** :
-1. Recrée la base de données propre
-2. Applique toutes les migrations (`supabase/migrations/`)
-3. Charge les données de `supabase/seed.sql` (bacs, zones, véhicules, tournées, utilisateurs…)
-
-> Ne pas sauter cette étape — elle crée aussi les triggers et fonctions SQL nécessaires au bon fonctionnement.
+Applique toutes les migrations (schéma, triggers, fonctions RPC) et charge `supabase/seed.sql` avec toutes les données de démonstration (bacs, zones, véhicules, tournées, utilisateurs).
 
 ---
 
 ### Étape 4 — Charger les comptes utilisateurs (logins)
 
-```bash
-psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -f supabase/seed_auth.sql
-```
+Cette étape est **obligatoire** pour pouvoir se connecter à l'application.
 
-> Si `psql` n'est pas installé, ouvrir **http://127.0.0.1:54323**, aller dans **SQL Editor**, et coller le contenu du fichier `supabase/seed_auth.sql`.
+1. Ouvrir **http://127.0.0.1:54323**
+2. Cliquer sur **SQL Editor**
+3. Copier-coller le contenu du fichier `supabase/seed_auth.sql`
+4. Cliquer **Run**
+
+> `psql` alternatif (si installé) : `psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -f supabase/seed_auth.sql`
 
 ---
 
-### Étape 5 — Configurer les variables d'environnement
+### Étape 5 — Configurer les variables d'environnement Docker
 
-Copier les fichiers `.env.example` pour chaque microservice :
+Créer le fichier `.env` principal lu par Docker Compose :
 
 ```bash
-cp microservices/service-auth/.env.example         microservices/service-auth/.env
-cp microservices/service-containers/.env.example   microservices/service-containers/.env
-cp microservices/service-routes/.env.example       microservices/service-routes/.env
-cp microservices/service-iot/.env.example          microservices/service-iot/.env
-cp microservices/service-gamification/.env.example microservices/service-gamification/.env
-cp microservices/service-analytics/.env.example    microservices/service-analytics/.env
-cp microservices/api-gateway/.env.example          microservices/api-gateway/.env
+# Windows PowerShell
+cp microservices/.env.example microservices/.env
+
+# Mac / Linux
+cp microservices/.env.example microservices/.env
 ```
 
-> Les valeurs par défaut fonctionnent directement avec `supabase start`. Aucune modification nécessaire pour le développement local.
+> Ce fichier contient les clés Supabase locales (identiques sur toutes les machines) et est ignoré par Git.
 
 ---
 
@@ -113,10 +112,13 @@ cd microservices
 docker compose up --build
 ```
 
-La première fois, Docker télécharge et construit les images (quelques minutes).  
+Lance les 7 services + Redis en parallèle dans Docker.  
+La première fois, Docker télécharge et build les images (~3-5 minutes).  
 Les fois suivantes : `docker compose up` suffit (sans `--build`).
 
-Garder ce terminal ouvert. Les services tournent sur les ports 5001–5006.
+**Garder ce terminal ouvert.** Tous les services tournent ici.
+
+> Pour vérifier que tout tourne : ouvrir Docker Desktop — 7 services doivent être verts.
 
 ---
 
@@ -130,11 +132,13 @@ npm install
 npm run dev
 ```
 
-L'application est accessible sur **http://localhost:5173**
+Application accessible sur **http://localhost:5173**
 
 ---
 
-### Étape 8 — Démarrer le simulateur IoT (optionnel mais recommandé)
+### Étape 8 — Simulateur IoT (optionnel)
+
+Le simulateur incrémente le remplissage des bacs toutes les 5 minutes et détecte automatiquement les nouveaux bacs et les resets.
 
 Dans un **nouveau terminal** :
 
@@ -143,23 +147,24 @@ cd microservices/service-iot
 node simulator.js
 ```
 
-Le simulateur incrémente automatiquement le remplissage de chaque bac toutes les **5 minutes**.  
-Il détecte les nouveaux bacs et les resets sans avoir besoin d'être redémarré.
-
+Modes disponibles :
 ```bash
-node simulator.js 10000       # toutes les 10 secondes (pour tester)
-node simulator.js 1000 fast   # mode rapide (pour tester les alertes)
+node simulator.js              # 5 minutes (défaut)
+node simulator.js 10000        # 10 secondes (test)
+node simulator.js 1000 fast    # mode rapide (test alertes)
 ```
 
 ---
 
 ## Comptes de démonstration
 
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Gestionnaire | gestionnaire@ecotrack.fr | *(voir seed_auth.sql)* |
-| Agent | agent@ecotrack.fr | *(voir seed_auth.sql)* |
-| Citoyen | citoyen@ecotrack.fr | *(voir seed_auth.sql)* |
+Les mots de passe sont dans `supabase/seed_auth.sql`.
+
+| Rôle | Email |
+|---|---|
+| Gestionnaire | gestionnaire@ecotrack.fr |
+| Agent de collecte | agent@ecotrack.fr |
+| Citoyen | citoyen@ecotrack.fr |
 
 ---
 
@@ -173,7 +178,7 @@ node simulator.js 1000 fast   # mode rapide (pour tester les alertes)
 
 ---
 
-## Résumé des commandes (usage quotidien)
+## Commandes quotidiennes
 
 ```bash
 # Démarrer Supabase
@@ -185,23 +190,27 @@ docker compose up
 # Démarrer le frontend (dans frontend/)
 npm run dev
 
-# Démarrer le simulateur IoT (dans microservices/service-iot/)
+# Simulateur IoT (dans microservices/service-iot/)
 node simulator.js
 
-# Arrêter Supabase proprement
+# Arrêter Supabase
 supabase stop
+
+# Réinitialiser complètement la base de données
+supabase db reset
 ```
 
 ---
 
 ## Dépannage
 
-**`supabase start` échoue** → vérifier que Docker Desktop est démarré.
-
-**`docker compose up` échoue sur un port occupé** → un autre service utilise déjà ce port. Arrêter l'application concernée ou changer le PORT dans le `.env`.
-
-**Les bacs n'apparaissent pas sur la carte** → les bacs doivent avoir une latitude et longitude renseignées. Les modifier dans Gestionnaire → Conteneurs.
-
-**Le remplissage ne se met pas à jour** → vérifier que le simulateur est en cours d'exécution (`node simulator.js`).
-
-**Réinitialiser complètement la base** → `supabase db reset` (recharge toutes les migrations + seed).
+| Problème | Solution |
+|---|---|
+| `supabase` non reconnu | Installer via Scoop : `scoop install supabase`, ou utiliser `npx supabase` |
+| `docker compose up` — variables non définies | Vérifier que `microservices/.env` existe (copié depuis `.env.example`) |
+| Services Docker qui crashent en boucle | Vérifier que `supabase start` tourne avant Docker |
+| Impossible de se connecter | Vérifier que l'étape 4 (seed_auth.sql) a été faite via Supabase Studio |
+| Bacs absents de la carte | Les bacs doivent avoir une latitude et longitude — les éditer dans Gestionnaire → Conteneurs |
+| Remplissage ne se met pas à jour | Lancer le simulateur : `node simulator.js` |
+| Simulateur — "fetch failed" | Vérifier que les microservices Docker tournent (`docker compose up`) |
+| Réinitialiser la base | `supabase db reset` puis refaire l'étape 4 |
