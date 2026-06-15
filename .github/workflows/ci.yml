@@ -37,6 +37,14 @@ jobs:
         working-directory: microservices/${{ matrix.service }}
         run: npm install
 
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high
+
   build-docker:
     name: Build Docker images
     runs-on: ubuntu-latest
