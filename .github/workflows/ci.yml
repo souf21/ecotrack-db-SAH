@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         service:
           - service-auth
@@ -24,26 +25,24 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: microservices/${{ matrix.service }}/package-lock.json
 
-      - name: Install dependencies — ${{ matrix.service }}
-        working-directory: microservices/${{ matrix.service }}
-        run: npm install
-
-       - name: Install Snyk CLI
+      - name: Install Snyk CLI
         run: npm install -g snyk
 
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
       - name: Run Snyk scan — ${{ matrix.service }}
-        working-directory: microservices/${{ matrix.service }}
         run: |
-          snyk auth ${{ secrets.SNYK_TOKEN }}
+          cd microservices/${{ matrix.service }}
           snyk test --severity-threshold=high
 
   build-docker:
@@ -53,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build all services
         working-directory: microservices
