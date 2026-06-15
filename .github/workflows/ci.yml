@@ -34,13 +34,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: microservices/${{ matrix.service }}/package-lock.json
 
+      
       - name: Install Snyk CLI
         run: npm install -g snyk
 
-      - name: Authenticate Snyk
-        run: snyk auth ${{ secrets.SNYK_TOKEN }}
-
       - name: Run Snyk scan — ${{ matrix.service }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK }}
         run: |
           cd microservices/${{ matrix.service }}
           snyk test --severity-threshold=high
