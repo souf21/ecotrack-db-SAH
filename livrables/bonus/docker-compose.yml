@@ -26,14 +26,4 @@ services:
     ports:
       - "6379:6379"
     restart: always
-```
 
----
-
-Crée le fichier `.dockerignore` à la racine de `backend/` :
-```
-node_modules
-.env
-logs
-coverage
-*.test.js

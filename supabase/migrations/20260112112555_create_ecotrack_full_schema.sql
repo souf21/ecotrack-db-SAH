@@ -2,12 +2,12 @@
 -- Crée toutes les tables avec UUID comme PK (recommandé Supabase)
 
 -- Activer extensions
-create extension if not exists "uuid-ossp";
+create extension if not exists "uuid-ossp" schema extensions;
 create extension if not exists "moddatetime";
 
 -- 1. ZONES & DECHETS
 create table zone (
-    id_zone uuid primary key default uuid_generate_v4(),
+    id_zone uuid primary key default gen_random_uuid(),
     nom_zone varchar(100) not null,
     code_postal varchar(10),
     description text,
@@ -17,7 +17,7 @@ create table zone (
 create trigger handle_updated_at_zone before update on zone for each row execute procedure moddatetime (updated_at);
 
 create table type_dechets (
-    id_type_dechets uuid primary key default uuid_generate_v4(),
+    id_type_dechets uuid primary key default gen_random_uuid(),
     libelle varchar(100) not null,
     couleur varchar(50),
     created_at timestamptz default now(),
@@ -26,7 +26,7 @@ create table type_dechets (
 create trigger handle_updated_at_type_dechets before update on type_dechets for each row execute procedure moddatetime (updated_at);
 
 create table conteneur (
-    id_conteneur uuid primary key default uuid_generate_v4(),
+    id_conteneur uuid primary key default gen_random_uuid(),
     reference varchar(100) unique not null,
     adresse text,
     etat varchar(50),
@@ -43,7 +43,7 @@ create trigger handle_updated_at_conteneur before update on conteneur for each r
 
 -- 2. CAPTEURS & MESURES
 create table capteur (
-    id_capteur uuid primary key default uuid_generate_v4(),
+    id_capteur uuid primary key default gen_random_uuid(),
     reference varchar(100) unique not null,
     type varchar(50),
     date_installation date,
@@ -55,7 +55,7 @@ create table capteur (
 create trigger handle_updated_at_capteur before update on capteur for each row execute procedure moddatetime (updated_at);
 
 create table mesure (
-    id_mesure uuid primary key default uuid_generate_v4(),
+    id_mesure uuid primary key default gen_random_uuid(),
     valeur decimal(10,2),
     datetime timestamp with time zone not null,
     unite varchar(20),
@@ -80,7 +80,7 @@ create table "user" (
 create trigger handle_updated_at_user before update on "user" for each row execute procedure moddatetime (updated_at);
 
 create table role (
-    id_role uuid primary key default uuid_generate_v4(),
+    id_role uuid primary key default gen_random_uuid(),
     nom varchar(50) not null unique,
     description text,
     created_at timestamptz default now()
@@ -95,7 +95,7 @@ create table user_role (
 
 -- 4. SIGNALEMENTS
 create table signalement (
-    id_signalement uuid primary key default uuid_generate_v4(),
+    id_signalement uuid primary key default gen_random_uuid(),
     type varchar(50),
     description text,
     statut varchar(50) default 'nouveau',
@@ -110,7 +110,7 @@ create trigger handle_updated_at_signalement before update on signalement for ea
 
 -- 5. TOURNEES & VEHICULES
 create table type_tournee (
-    id_type_tournee uuid primary key default uuid_generate_v4(),
+    id_type_tournee uuid primary key default gen_random_uuid(),
     libelle varchar(100) not null,
     created_at timestamptz default now()
 );
@@ -125,7 +125,7 @@ create table vehicule (
 );
 
 create table tournee (
-    id_tournee uuid primary key default uuid_generate_v4(),
+    id_tournee uuid primary key default gen_random_uuid(),
     date date not null,
     heure_debut time,
     heure_fin time,
@@ -153,7 +153,7 @@ create table realise (
 
 -- 6. DEFIS & BADGES
 create table defi (
-    id_defi uuid primary key default uuid_generate_v4(),
+    id_defi uuid primary key default gen_random_uuid(),
     titre varchar(150),
     description text,
     statut varchar(50),
@@ -166,7 +166,7 @@ create table defi (
 create trigger handle_updated_at_defi before update on defi for each row execute procedure moddatetime (updated_at);
 
 create table badge (
-    id_badge uuid primary key default uuid_generate_v4(),
+    id_badge uuid primary key default gen_random_uuid(),
     nom varchar(100),
     description text,
     icon_url text,

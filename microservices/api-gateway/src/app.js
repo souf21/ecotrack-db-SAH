@@ -15,8 +15,7 @@ const GAMIFICATION_URL  = process.env.SERVICE_GAMIFICATION_URL  || 'http://local
 const ANALYTICS_URL     = process.env.SERVICE_ANALYTICS_URL     || 'http://localhost:5006';
 
 // ── Global middlewares ────────────────────────────────────────────────────────
-// NOTE: no express.json() here — body must stay as a raw stream so the proxy
-// can forward it unchanged to downstream services.
+
 app.use(cors());
 app.use(morgan('combined'));
 app.use(generalLimiter);
@@ -35,9 +34,6 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
-// Runs before any proxy. Checks if the current route requires a valid JWT.
-// If it does, calls requireAuth which verifies the token and injects
-// x-user-id / x-user-email headers for the downstream service.
 const PROTECTED_ROUTES = [
   { methods: ['GET'],                        path: '/api/auth/me' },
   { methods: ['GET'],                        path: '/api/auth/admin-only' },

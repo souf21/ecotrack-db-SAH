@@ -1,6 +1,6 @@
 -- Table partitionnée
 CREATE TABLE mesure_partitioned (
-    id_mesure uuid DEFAULT uuid_generate_v4(),
+    id_mesure uuid DEFAULT gen_random_uuid(),
     valeur decimal(10,2),
     datetime timestamptz NOT NULL,
     unite varchar(20),

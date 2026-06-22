@@ -1,0 +1,18 @@
+{
+  "devDependencies": {
+    "jest": "^30.4.2"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"],
+    "collectCoverageFrom": [
+      "tests/lib/**/*.js"
+    ],
+    "coverageReporters": ["html", "text"],
+    "coverageDirectory": "coverage"
+  }
+}

@@ -26,6 +26,13 @@ Thumbs.db
 # Claude Code tooling
 .claude/
 
+# IDE
+.vscode/
+
+# Generated reports / artifacts
+audit-report.json
+ecotrack-deploy-guide.html
+
 # Supabase local runtime
 supabase/.branches/
 supabase/.temp/

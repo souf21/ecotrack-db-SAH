@@ -2,3 +2,7 @@ node_modules/
 coverage/
 logs/
 .env
+
+# Built frontend files (filled by CI/CD — only keep the placeholder)
+frontend-dist/*
+!frontend-dist/.gitkeep

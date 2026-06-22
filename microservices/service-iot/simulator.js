@@ -15,7 +15,7 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 const API_KEY  = process.env.IOT_API_KEY           || 'dev-iot-key-ecotrack';
-const IOT_URL  = `http://localhost:80/api/iot/readings`;
+const IOT_URL  = process.env.IOT_GATEWAY_URL || 'http://localhost:80/api/iot/readings';
 const INTERVAL = parseInt(process.argv[2])         || 300_000;
 const FAST     = process.argv.includes('fast');
 
