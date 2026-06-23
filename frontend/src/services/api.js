@@ -1,4 +1,4 @@
- const API = 'http://localhost:80';
+ const API = '';
 
 export const get = (url) => fetch(API + url, { headers: getHeaders() });
 export const post = (url, body) => fetch(API + url, {

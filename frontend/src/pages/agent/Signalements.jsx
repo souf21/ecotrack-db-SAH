@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUser } from '../../services/auth';
 
-const API = 'http://localhost/api/gamification/signalements';
+const API = '/api/gamification/signalements';
 
 const STATUS_LABELS = {
   nouveau:  { label: 'Nouveau',  cls: 'bg-orange-100 text-orange-700' },
@@ -36,7 +36,7 @@ export default function AgentSignalements({ user }) {
   const updateStatus = async (id, statut) => {
     setUpdating(id);
     try {
-      const res = await fetch(`http://localhost/api/gamification/signalements/${id}/status`, {
+      const res = await fetch(`/api/gamification/signalements/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ statut }),

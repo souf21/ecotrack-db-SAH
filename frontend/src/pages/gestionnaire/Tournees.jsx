@@ -22,7 +22,7 @@ async function resetBinFill(tournee) {
   );
 }
 
-const API = 'http://localhost/api/routes';
+const API = '/api/routes';
 
 const STATUS_LABELS = {
   planifiée: { label: 'Planifiée', cls: 'bg-blue-100 text-blue-700' },
@@ -321,7 +321,7 @@ function CreateTourneeModal({ onClose, onCreated, token }) {
     Promise.all([
       fetch(`${API}/types`,    { headers }).then(r => r.json()),
       fetch(`${API}/vehicles`, { headers }).then(r => r.json()),
-      fetch('http://localhost/api/bins', { headers }).then(r => r.json()),
+      fetch('/api/bins', { headers }).then(r => r.json()),
     ]).then(([typesData, vehiclesData, binsData]) => {
       setTypes(Array.isArray(typesData)    ? typesData    : (typesData.data    || []));
       setVehicles(Array.isArray(vehiclesData) ? vehiclesData : (vehiclesData.data || []));

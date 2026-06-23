@@ -61,7 +61,7 @@ export default function Signalement({ user, onUserUpdate }) {
       }
 
       // Soumettre via l'API gamification (points attribués automatiquement)
-      const res = await fetch('http://localhost/api/gamification/signalements', {
+      const res = await fetch('/api/gamification/signalements', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -130,7 +130,7 @@ export default function Conteneurs() {
 
   async function handleDelete(id) {
     if (!confirm('Supprimer ce conteneur ?')) return;
-    const res = await fetch(`http://localhost/api/bins/${id}`, { method: 'DELETE', headers });
+    const res = await fetch(`/api/bins/${id}`, { method: 'DELETE', headers });
     if (!res.ok) { alert('Erreur lors de la suppression'); return; }
     await fetchAll();
   }

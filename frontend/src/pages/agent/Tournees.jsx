@@ -24,7 +24,7 @@ async function resetBinFill(tournee) {
   );
 }
 
-const API = 'http://localhost/api/routes';
+const API = '/api/routes';
 
 const STATUS_LABELS = {
   planifiée: { label: 'Planifiée', cls: 'bg-blue-100 text-blue-700' },

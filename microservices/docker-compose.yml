@@ -5,9 +5,9 @@ services:
   api-gateway:
     build: ./api-gateway
     ports:
-      - "80:80"
+      - "3001:3001"
     environment:
-      PORT: 80
+      PORT: 3001
       NODE_ENV: production
       SERVICE_AUTH_URL: http://service-auth:5001
       SERVICE_CONTAINERS_URL: http://service-containers:5002

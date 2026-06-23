@@ -14,8 +14,8 @@ export default function Analytics() {
       try {
         // Use JWT-authenticated API for RLS-protected tables
         const [binsRes, routesRes, { data: signalements }, { data: mesures }] = await Promise.all([
-          fetch('http://localhost/api/bins', { headers: authHeader }).then(r => r.json()),
-          fetch('http://localhost/api/routes', { headers: authHeader }).then(r => r.json()),
+          fetch('/api/bins', { headers: authHeader }).then(r => r.json()),
+          fetch('/api/routes', { headers: authHeader }).then(r => r.json()),
           supabase.from('signalement').select('statut, date_signalement'),
           supabase.from('mesure').select('valeur, unite, datetime').eq('unite', '%').order('datetime', { ascending: false }).limit(200),
         ]);
